@@ -14,14 +14,13 @@ import cc.iotkit.common.exception.BizException;
 import cc.iotkit.common.utils.CodecUtil;
 import cc.iotkit.common.utils.StringUtils;
 import cc.iotkit.common.utils.UniqueIdUtil;
-import cc.iotkit.model.device.DeviceInfo;
-import cc.iotkit.model.product.Product;
 import cc.iotkit.plugin.core.thing.IThingService;
 import cc.iotkit.plugin.core.thing.actions.ActionResult;
 import cc.iotkit.plugin.core.thing.actions.DeviceState;
 import cc.iotkit.plugin.core.thing.actions.EventLevel;
 import cc.iotkit.plugin.core.thing.actions.IDeviceAction;
 import cc.iotkit.plugin.core.thing.actions.up.*;
+import cc.iotkit.plugin.core.thing.model.ThingProduct;
 import cc.iotkit.plugins.mqtt.conf.MqttConfig;
 import com.gitee.starblues.bootstrap.annotation.AutowiredType;
 import com.gitee.starblues.core.PluginInfo;
@@ -133,7 +132,7 @@ public class MqttVerticle extends AbstractVerticle implements Handler<MqttEndpoi
             return;
         }
 
-        Product product = thingService.getProduct(productKey);
+        ThingProduct product = thingService.getProduct(productKey);
         if (product == null) {
             log.error("获取产品信息失败,productKey:{}", productKey);
             endpoint.reject(MqttConnectReturnCode.CONNECTION_REFUSED_BAD_USERNAME_OR_PASSWORD);
@@ -208,15 +207,8 @@ public class MqttVerticle extends AbstractVerticle implements Handler<MqttEndpoi
                 try {
                     String topic = s.topicName();
                     Device device = getDevice(topic);
-                    if(device.getDeviceName().equals("+")){
-                        endpointMap.put(device.getProductKey(), endpoint);
-                        online(device.getProductKey());
-                    }else{
-                        endpointMap.put(device.getDeviceName(), endpoint);
-                        online(device.getProductKey(), device.getDeviceName());
-                    }
                     //添加设备对应连接
-                  //  endpointMap.put(device.getDeviceName(), endpoint);
+                    endpointMap.put(device.getDeviceName(), endpoint);
                     online(device.getProductKey(), device.getDeviceName());
                     reasonCodes.add(MqttSubAckReasonCode.qosGranted(s.qualityOfService()));
                 } catch (Throwable e) {
@@ -366,31 +358,10 @@ public class MqttVerticle extends AbstractVerticle implements Handler<MqttEndpoi
         );
         DEVICE_ONLINE.put(dn, true);
     }
-    //网关上线，网关下的子设备上线
-    public void online(String pk) {
-        List<DeviceInfo> deviceInfoList = thingService.findByParentId(pk);
-        for (DeviceInfo deviceInfo : deviceInfoList) {
-            if (Boolean.TRUE.equals(DEVICE_ONLINE.get(deviceInfo.getDeviceName()))) {
-                return;
-            }
 
-            //上线
-            thingService.post(
-                    pluginInfo.getPluginId(),
-                    fillAction(DeviceStateChange.builder()
-                                    .state(DeviceState.ONLINE)
-                                    .build()
-                            , pk, deviceInfo.getDeviceName()
-                    )
-            );
-            DEVICE_ONLINE.put(deviceInfo.getDeviceName(), true);
-        }
-    }
-
-
-        /**
-         * 回复设备
-         */
+    /**
+     * 回复设备
+     */
     private void reply(MqttEndpoint endpoint, String topic, JsonObject payload) {
         reply(endpoint, topic, payload, 0);
     }
@@ -440,15 +411,23 @@ public class MqttVerticle extends AbstractVerticle implements Handler<MqttEndpoi
         }
     }
 
-    public void publish(String endpointMapKey, String topic, String msg) {
-        MqttEndpoint endpoint = endpointMap.get(endpointMapKey);
+    public void publish(String deviceName, String topic, String msg) {
+        MqttEndpoint endpoint = endpointMap.get(deviceName);
         if (endpoint == null) {
-                throw new BizException(ErrCode.SEND_DESTINATION_NOT_FOUND);
+            throw new BizException(ErrCode.SEND_DESTINATION_NOT_FOUND);
         }
         Future<Integer> result = endpoint.publish(topic, Buffer.buffer(msg),
                 MqttQoS.AT_LEAST_ONCE, false, false);
         result.onFailure(e -> log.error("public topic failed", e));
         result.onSuccess(integer -> log.info("publish success,topic:{},payload:{}", topic, msg));
+    }
+
+    public Device getDevice(String topic) {
+        String[] topicParts = topic.split("/");
+        if (topicParts.length < 5) {
+            return null;
+        }
+        return new Device(topicParts[2], topicParts[3]);
     }
 
     public boolean haveEndpoint(String deviceName){
@@ -458,22 +437,6 @@ public class MqttVerticle extends AbstractVerticle implements Handler<MqttEndpoi
         }
         return true;
     }
-
-//    public Device getDevice(String topic) {
-//        String[] topicParts = topic.split("/");
-//        if (topicParts.length < 5) {
-//            return null;
-//        }
-//        return new Device(topicParts[2], topicParts[3]);
-//    }
-public Device getDevice(String topic) {
-    String[] topicParts = topic.split("/");
-    if (topicParts.length < 2) {
-        return null;
-    }
-    return new Device(topicParts[2], topicParts[3]);
-}
-
 
     @Data
     @NoArgsConstructor

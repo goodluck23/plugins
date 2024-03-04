@@ -10,13 +10,13 @@
 package cc.iotkit.plugins.http.service;
 
 import cc.iotkit.common.utils.StringUtils;
-import cc.iotkit.model.device.DeviceInfo;
 import cc.iotkit.plugin.core.thing.IThingService;
 import cc.iotkit.plugin.core.thing.actions.DeviceState;
 import cc.iotkit.plugin.core.thing.actions.EventLevel;
 import cc.iotkit.plugin.core.thing.actions.up.DeviceStateChange;
 import cc.iotkit.plugin.core.thing.actions.up.EventReport;
 import cc.iotkit.plugin.core.thing.actions.up.PropertyReport;
+import cc.iotkit.plugin.core.thing.model.ThingDevice;
 import cc.iotkit.plugins.http.conf.HttpConfig;
 import com.gitee.starblues.bootstrap.annotation.AutowiredType;
 import com.gitee.starblues.core.PluginInfo;
@@ -38,6 +38,8 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * mqtt官方协议文档：
@@ -49,22 +51,21 @@ import java.util.UUID;
 @Component
 @Data
 public class HttpVerticle extends AbstractVerticle implements Handler<RoutingContext> {
-
     private HttpConfig config;
-
     @Autowired
     @AutowiredType(AutowiredType.Type.MAIN_PLUGIN)
     private IThingService thingService;
-
     @Autowired
     private PluginInfo pluginInfo;
-
     private static final Set<String> DEVICE_ONLINE = new HashSet<>();
-
     private HttpServer httpServer;
 
     @Override
     public void start() {
+        Executors.newSingleThreadScheduledExecutor().schedule(this::initHttpServer, 3, TimeUnit.SECONDS);
+    }
+
+    private void initHttpServer() {
         httpServer = vertx.createHttpServer();
         Router router = Router.router(vertx);
         router.route().handler(BodyHandler.create()).handler(this);
@@ -79,6 +80,9 @@ public class HttpVerticle extends AbstractVerticle implements Handler<RoutingCon
 
     @Override
     public void stop() {
+        httpServer.close(rst -> {
+            log.info("http server close:{}", rst.succeeded());
+        });
     }
 
     @Override
@@ -108,7 +112,7 @@ public class HttpVerticle extends AbstractVerticle implements Handler<RoutingCon
             String productKey = parts[2];
             String deviceName = parts[3];
             String type = parts[4];
-            DeviceInfo device = thingService.getDevice(deviceName);
+            ThingDevice device = thingService.getDevice(deviceName);
             if (device == null) {
                 log.error("认证失败，设备:{} 不存在", deviceName);
                 response.setStatusCode(401);
@@ -153,6 +157,7 @@ public class HttpVerticle extends AbstractVerticle implements Handler<RoutingCon
                                 .level(EventLevel.INFO)
                                 .name(parts[3])
                                 .params(payload.getJsonObject("params").getMap())
+                                .time(System.currentTimeMillis())
                                 .build()
                 );
                 end(response);
@@ -169,6 +174,7 @@ public class HttpVerticle extends AbstractVerticle implements Handler<RoutingCon
                                     .productKey(productKey)
                                     .deviceName(deviceName)
                                     .params(payload.getJsonObject("params").getMap())
+                                    .time(System.currentTimeMillis())
                                     .build()
                     );
                     end(response);

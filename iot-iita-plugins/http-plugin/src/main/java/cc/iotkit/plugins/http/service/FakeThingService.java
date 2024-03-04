@@ -1,10 +1,11 @@
 package cc.iotkit.plugins.http.service;
 
-import cc.iotkit.model.device.DeviceInfo;
-import cc.iotkit.model.product.Product;
+
 import cc.iotkit.plugin.core.thing.IThingService;
 import cc.iotkit.plugin.core.thing.actions.ActionResult;
 import cc.iotkit.plugin.core.thing.actions.IDeviceAction;
+import cc.iotkit.plugin.core.thing.model.ThingDevice;
+import cc.iotkit.plugin.core.thing.model.ThingProduct;
 import io.vertx.core.json.JsonObject;
 import lombok.extern.slf4j.Slf4j;
 
@@ -27,16 +28,16 @@ public class FakeThingService implements IThingService {
     }
 
     @Override
-    public Product getProduct(String pk) {
-        return Product.builder()
+    public ThingProduct getProduct(String pk) {
+        return ThingProduct.builder()
                 .productKey("cGCrkK7Ex4FESAwe")
                 .productSecret("xdkKUymrEGSCYWswqCvSPyRSFvH5j7CU")
                 .build();
     }
 
     @Override
-    public DeviceInfo getDevice(String dn) {
-        return DeviceInfo.builder()
+    public ThingDevice getDevice(String dn) {
+        return ThingDevice.builder()
                 .productKey("cGCrkK7Ex4FESAwe")
                 .deviceName(dn)
                 .secret("mBCr3TKstTj2KeM6")
@@ -48,8 +49,8 @@ public class FakeThingService implements IThingService {
         return new JsonObject().put("powerstate", 1).getMap();
     }
 
-    @Override
-    public List<DeviceInfo> findByParentId(String pk) {
-        return null;
-    }
+//    @Override
+//    public List<DeviceInfo> findByParentId(String pk) {
+//        return null;
+//    }
 }

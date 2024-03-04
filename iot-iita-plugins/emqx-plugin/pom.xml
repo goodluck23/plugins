@@ -9,14 +9,26 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>modbus-plugin</artifactId>
+    <artifactId>emqx-plugin</artifactId>
 
     <dependencies>
 
         <dependency>
-            <groupId>com.digitalpetri.modbus</groupId>
-            <artifactId>modbus-master-tcp</artifactId>
-            <version>1.2.0</version>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-core</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-mqtt</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-web-proxy</artifactId>
+            <version>${vertx.version}</version>
         </dependency>
 
     </dependencies>
@@ -49,11 +61,11 @@
                 <configuration>
                     <mode>${plugin.build.mode}</mode>
                     <pluginInfo>
-                        <id>modbus-plugin</id>
-                        <bootstrapClass>cc.iotkit.plugins.modbus.Application</bootstrapClass>
+                        <id>emqx-plugin</id>
+                        <bootstrapClass>cc.iotkit.plugins.emqx.Application</bootstrapClass>
                         <version>${project.version}</version>
                         <provider>iita</provider>
-                        <description>modbus示例插件</description>
+                        <description>emqx示例插件</description>
                         <configFileName>application.yml</configFileName>
                     </pluginInfo>
                     <prodConfig>

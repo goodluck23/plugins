@@ -1,4 +1,4 @@
-package cc.iotkit.plugins.mqtt.service;
+package cc.iotkit.plugins.emqx.service;
 
 import cc.iotkit.plugin.core.thing.IThingService;
 import cc.iotkit.plugin.core.thing.actions.ActionResult;
@@ -8,9 +8,7 @@ import cc.iotkit.plugin.core.thing.model.ThingProduct;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -69,13 +67,4 @@ public class FakeThingService implements IThingService {
     public Map<String, ?> getProperty(String dn) {
         return new HashMap<>(0);
     }
-
-   /* @Override
-    public List<DeviceInfo> findByParentId(String pk) {
-        List<DeviceInfo> deviceInfoList = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            deviceInfoList.add(DeviceInfo.builder().productKey("Prodduct" + i).deviceName("device" + i).build());
-        }
-        return deviceInfoList;
-    }*/
 }
