@@ -2,8 +2,11 @@ plugin:
   runMode: dev
   mainPackage: cc.iotkit.plugin
 
+
 emqx:
   host: 127.0.0.1
   port: 1883
   topics: /sys/#
   authPort: 8104
+  clientId: testemqx
+
